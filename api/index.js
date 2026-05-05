@@ -13,7 +13,6 @@ const JITTER_MS_MAX = parsePositiveInt(process.env.JITTER_MS_MAX, 0, 0);
 
 // ---------- Constants ----------
 const ALLOWED_METHODS = new Set(["GET", "HEAD", "POST"]);
-
 const STRIP_REQUEST_HEADERS = new Set([
   "host", "connection", "keep-alive", "proxy-authenticate",
   "proxy-authorization", "te", "trailer", "transfer-encoding",
@@ -25,14 +24,12 @@ const STRIP_REQUEST_HEADERS = new Set([
   "cf-ray", "cf-visitor", "true-client-ip", "cdn-loop", "via",
   "proxy-connection",
 ]);
-
 const STRIP_RESPONSE_HEADERS = new Set([
   "server", "x-powered-by", "x-vercel-cache", "x-vercel-id",
   "x-vercel-deployment-url", "cf-cache-status", "cf-ray",
   "report-to", "nel", "access-control-allow-origin",
   "access-control-allow-credentials",
 ]);
-
 const FORWARD_HEADER_PREFIXES = [
   "accept", "content-", "user-agent", "cache-control",
   "pragma", "sec-ch-", "sec-fetch-", "sec-websocket-",
@@ -40,7 +37,7 @@ const FORWARD_HEADER_PREFIXES = [
   "dnt", "authorization",
 ];
 
-// ---------- HTML Landing Page (Decoy) ----------
+// ---------- Decoy HTML (Landing Page) ----------
 const LANDING_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,7 +79,9 @@ const LANDING_HTML = `<!DOCTYPE html>
     animation: pulse 1.5s infinite;
   }
   @keyframes pulse {
-    0%{opacity:1; transform:scale(1);} 50%{opacity:0.5; transform:scale(1.1);} 100%{opacity:1; transform:scale(1);}
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
   }
   .status-text { font-size: 1rem; color: #2ecc71; }
   .quote {
@@ -102,9 +101,7 @@ const LANDING_HTML = `<!DOCTYPE html>
   }
   .info-label { color: #888; font-size: 0.7rem; text-transform: uppercase; }
   .info-value { color: #e63946; font-weight: bold; }
-  .footer-text {
-    text-align: center; font-size: 0.75rem; color: #555; margin-top: 2rem;
-  }
+  .footer-text { text-align: center; font-size: 0.75rem; color: #555; margin-top: 2rem; }
 </style>
 </head>
 <body>
@@ -119,74 +116,50 @@ const LANDING_HTML = `<!DOCTYPE html>
     <span class="quote-author">— Blaise Pascal</span>
   </div>
   <div class="info-grid">
-    <div class="info-item"><span class="info-label">Project</span><br><span class="info-value">xHTTP Relay</span></div>
+    <div class="info-item"><span class="info-label">Project</span><br><span class="info-value">Edge Relay</span></div>
     <div class="info-item"><span class="info-label">Environment</span><br><span class="info-value">Edge Network</span></div>
     <div class="info-item"><span class="info-label">Node</span><br><span class="info-value" id="nodeId">EU-WEST-1</span></div>
     <div class="info-item"><span class="info-label">Visitors</span><br><span class="info-value" id="visitorCount">1,337</span></div>
   </div>
-  <div class="footer-text">
-    &copy; 2025 – This is a decoy page.
-  </div>
+  <div class="footer-text">&copy; 2025 – This is a decoy page.</div>
 </div>
 <script>
-  (function(){
-    let c = localStorage.getItem('vCounter');
-    if(!c){ c = 1337 + Math.floor(Math.random()*100); }
+  (function() {
+    var c = localStorage.getItem('vCounter');
+    if (!c) { c = 1337 + Math.floor(Math.random() * 100); }
     c = parseInt(c) + 1;
     localStorage.setItem('vCounter', c);
     document.getElementById('visitorCount').textContent = c.toLocaleString();
-    const regions = ['EU-WEST-1','US-EAST-2','AP-SOUTHEAST-1','SA-EAST-1'];
-    document.getElementById('nodeId').textContent = regions[Math.floor(Math.random()*regions.length)];
+    var regions = ['EU-WEST-1', 'US-EAST-2', 'AP-SOUTHEAST-1', 'SA-EAST-1'];
+    document.getElementById('nodeId').textContent = regions[Math.floor(Math.random() * regions.length)];
   })();
 </script>
 </body>
 </html>`;
 
-// ---------- Helper Functions ----------
-function normalizeRelayPath(rawPath) {
-  if (!rawPath) return "/";
-  let path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
-  if (path.length > 1 && path.endsWith("/")) {
-    path = path.slice(0, -1);
-  }
-  return path;
+// ---------- Helpers ----------
+function normalizeRelayPath(raw) {
+  if (!raw) return "/";
+  let p = raw.startsWith("/") ? raw : `/${raw}`;
+  if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+  return p;
 }
 function parsePositiveInt(raw, fallback, min) {
-  const val = Number(raw);
-  if (!Number.isFinite(val) || val < min) return fallback;
-  return Math.trunc(val);
+  const v = Number(raw);
+  if (!Number.isFinite(v) || v < min) return fallback;
+  return Math.trunc(v);
 }
-function tryAcquireSlot() {
-  if (inFlight >= MAX_INFLIGHT) return false;
-  inFlight++;
-  return true;
-}
-function releaseSlot() {
-  inFlight = Math.max(0, inFlight - 1);
-}
-function shouldForwardHeader(headerName) {
-  for (const prefix of FORWARD_HEADER_PREFIXES) {
-    if (headerName.startsWith(prefix)) return true;
-  }
-  return false;
-}
-function randomItem(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-function randomDelay(maxMs) {
-  if (maxMs <= 0) return;
-  const ms = Math.floor(Math.random() * maxMs) + 20;
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+function tryAcquireSlot() { if (inFlight >= MAX_INFLIGHT) return false; inFlight++; return true; }
+function releaseSlot() { inFlight = Math.max(0, inFlight - 1); }
+function shouldForwardHeader(h) { for (const p of FORWARD_HEADER_PREFIXES) if (h.startsWith(p)) return true; return false; }
+function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randomDelay(max) { if (max <= 0) return; const ms = Math.floor(Math.random() * max) + 20; return new Promise(r => setTimeout(r, ms)); }
 
 // ---------- Shared State ----------
 let inFlight = 0;
 const SERVER_NAMES = ["nginx", "Apache/2.4.41 (Ubuntu)", "LiteSpeed", "cloudflare", "Microsoft-IIS/10.0"];
-const DECOY_404_TEMPLATES = [
-  "<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p></body></html>",
-  "<!DOCTYPE html><html><head><title>Page Not Found</title></head><body style='text-align:center;padding-top:50px;'><h2>404</h2><p>Oops! The page you're looking for doesn't exist.</p></body></html>",
-  "<!DOCTYPE html><html><head><title>Error 404</title></head><body><h1>404 - Resource Not Found</h1><p>Please check the URL or contact the administrator.</p></body></html>",
-];
+const DECOY_404_HTML = `<!DOCTYPE html><html><head><title>404 Not Found</title></head><body style="text-align:center;padding-top:50px;background:#0a0a0a;color:#ccc;font-family:monospace;"><h1>404</h1><p>Nothing to see here.</p></body></html>`;
+
 const FAKE_HEALTH_JSON = JSON.stringify({
   status: "ok",
   uptime: Math.floor(Date.now() / 1000) % 86400,
@@ -196,12 +169,11 @@ const FAKE_HEALTH_JSON = JSON.stringify({
 
 // ---------- Main Handler ----------
 export default async function handler(req) {
-  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const startedAt = Date.now();
   let slotAcquired = false;
   const url = new URL(req.url);
 
-  // ---- 1. Landing page (root) ----
+  // ---- Landing Page ----
   if (url.pathname === "/" || url.pathname === "/index.html") {
     return new Response(LANDING_HTML, {
       status: 200,
@@ -209,49 +181,47 @@ export default async function handler(req) {
     });
   }
 
-  // ---- 2. Fake Health Check ----
+  // ---- Fake Health ----
   if (url.pathname === FAKE_HEALTH_PATH) {
-    const respHeaders = new Headers();
-    respHeaders.set("content-type", "application/json; charset=utf-8");
-    respHeaders.set("server", randomItem(SERVER_NAMES));
-    return new Response(FAKE_HEALTH_JSON, { status: 200, headers: respHeaders });
+    return new Response(FAKE_HEALTH_JSON, {
+      status: 200,
+      headers: { "content-type": "application/json", "server": randomItem(SERVER_NAMES) }
+    });
   }
 
-  // ---- 3. Validate target domain ----
+  // ---- Missing Target ----
   if (!TARGET_BASE) {
-    return new Response(randomItem(DECOY_404_TEMPLATES), {
+    return new Response(DECOY_404_HTML, {
       status: 404,
       headers: { "content-type": "text/html; charset=utf-8", "server": randomItem(SERVER_NAMES) }
     });
   }
 
-  // ---- 4. Path validation (relay only on RELAY_PATH) ----
-  if (!(url.pathname === RELAY_PATH || url.pathname.startsWith(`${RELAY_PATH}/`))) {
-    const decoyHTML = randomItem(DECOY_404_TEMPLATES);
-    return new Response(decoyHTML, {
+  // ---- Path Validation (Relay) ----
+  if (!(url.pathname === RELAY_PATH || url.pathname.startsWith(RELAY_PATH + "/"))) {
+    return new Response(DECOY_404_HTML, {
       status: 404,
       headers: { "content-type": "text/html; charset=utf-8", "server": randomItem(SERVER_NAMES) }
     });
   }
 
-  // ---- 5. Method validation ----
+  // ---- Method ----
   if (!ALLOWED_METHODS.has(req.method)) {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
-  // ---- 6. Authentication (optional) ----
+  // ---- Auth (optional) ----
   if (RELAY_KEY) {
     const authToken = req.headers.get("x-relay-key") || "";
     if (authToken !== RELAY_KEY) {
-      const decoyHTML = randomItem(DECOY_404_TEMPLATES);
-      return new Response(decoyHTML, {
+      return new Response(DECOY_404_HTML, {
         status: 404,
         headers: { "content-type": "text/html; charset=utf-8", "server": randomItem(SERVER_NAMES) }
       });
     }
   }
 
-  // ---- 7. Concurrency limit ----
+  // ---- Concurrency ----
   if (!tryAcquireSlot()) {
     return new Response("Service Unavailable", { status: 503, headers: { "retry-after": "1" } });
   }
@@ -260,14 +230,14 @@ export default async function handler(req) {
   try {
     // Build target URL
     const targetUrl = `${TARGET_BASE}${url.pathname}${url.search}`;
-    // Prepare headers
+
+    // Prepare request headers
     const headers = new Headers();
     let clientIp = null;
     for (const [key, value] of req.headers) {
       const lowerKey = key.toLowerCase();
       if (STRIP_REQUEST_HEADERS.has(lowerKey)) continue;
-      if (lowerKey.startsWith("x-vercel-")) continue;
-      if (lowerKey.startsWith("cf-")) continue;
+      if (lowerKey.startsWith("x-vercel-") || lowerKey.startsWith("cf-")) continue;
       if (lowerKey === "x-relay-key") continue;
       if (lowerKey === "x-real-ip" || lowerKey === "true-client-ip") {
         if (!clientIp && value) clientIp = value;
@@ -276,9 +246,7 @@ export default async function handler(req) {
       if (!shouldForwardHeader(lowerKey)) continue;
       headers.set(key, value);
     }
-    if (clientIp) {
-      headers.set("x-forwarded-for", clientIp);
-    }
+    if (clientIp) headers.set("x-forwarded-for", clientIp);
     if (!headers.has("user-agent")) {
       headers.set("user-agent", randomItem([
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
@@ -286,59 +254,58 @@ export default async function handler(req) {
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
       ]));
     }
 
     // Optional jitter
     if (JITTER_MS_MAX > 0) await randomDelay(JITTER_MS_MAX);
 
-    // Upstream request
+    // Fetch upstream
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), UPSTREAM_TIMEOUT_MS);
-    const fetchOptions = {
+    const fetchOpts = {
       method: req.method,
       headers,
       redirect: "manual",
       signal: abortController.signal,
     };
     if (req.method !== "GET" && req.method !== "HEAD") {
-      fetchOptions.body = req.body;
-      fetchOptions.duplex = "half";
+      fetchOpts.body = req.body;
+      fetchOpts.duplex = "half";
     }
     let upstream;
     try {
-      upstream = await fetch(targetUrl, fetchOptions);
+      upstream = await fetch(targetUrl, fetchOpts);
     } finally {
       clearTimeout(timeoutId);
     }
 
-    // Build response headers (randomized)
+    // Build response headers
     const responseHeaders = new Headers();
-    for (const [key, value] of upstream.headers) {
-      const lowerKey = key.toLowerCase();
-      if (lowerKey === "transfer-encoding" || lowerKey === "connection") continue;
-      if (STRIP_RESPONSE_HEADERS.has(lowerKey)) continue;
-      if (lowerKey.startsWith("x-vercel-")) continue;
-      if (lowerKey.startsWith("cf-")) continue;
-      responseHeaders.set(key, value);
+    for (const [k, v] of upstream.headers) {
+      const lk = k.toLowerCase();
+      if (lk === "transfer-encoding" || lk === "connection") continue;
+      if (STRIP_RESPONSE_HEADERS.has(lk)) continue;
+      if (lk.startsWith("x-vercel-") || lk.startsWith("cf-")) continue;
+      responseHeaders.set(k, v);
     }
     responseHeaders.set("server", randomItem(SERVER_NAMES));
     if (Math.random() > 0.3) responseHeaders.set("x-content-type-options", "nosniff");
     if (Math.random() > 0.5) responseHeaders.set("x-frame-options", "SAMEORIGIN");
-    if (Math.random() > 0.7) responseHeaders.set("x-xss-protection", "1; mode=block");
 
     if (process.env.ENABLE_LOGGING !== "0") {
-      console.log(`[relay] ${requestId} ${req.method} ${url.pathname} → ${upstream.status} (${Date.now() - startedAt}ms)`);
+      console.log(`[relay] ${req.method} ${url.pathname} -> ${upstream.status} (${Date.now() - startedAt}ms)`);
     }
-    return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
-  } catch (error) {
-    if (process.env.ENABLE_LOGGING !== "0") {
-      console.error(`[relay] ${requestId} error: ${error.message}`);
-    }
-    if (error.name === "AbortError") {
-      return new Response("Gateway Timeout", { status: 504 });
-    }
-    return new Response("Bad Gateway", { status: 502 });
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: responseHeaders,
+    });
+  } catch (err) {
+    if (process.env.ENABLE_LOGGING !== "0") console.error(`[relay] error: ${err.message}`);
+    return new Response(err.name === "AbortError" ? "Gateway Timeout" : "Bad Gateway", {
+      status: err.name === "AbortError" ? 504 : 502,
+    });
   } finally {
     if (slotAcquired) releaseSlot();
   }
