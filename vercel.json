@@ -1,8 +1,6 @@
 {
-  "name": "dooroorooroo",
-  "version": "1.0.0",
-  "type": "module",
-  "description": "here comes the sun",
-  "private": true,
-  "license": "MIT"
+  "version": 2,
+  "functions": { "api/index.js": { "memory": 128, "maxDuration": 60 } },
+  "rewrites": [ { "source": "/(.*)", "destination": "/api/index" } ],
+  "trailingSlash": false
 }
