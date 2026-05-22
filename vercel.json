@@ -1,6 +1,19 @@
 {
   "version": 2,
-  "functions": { "api/index.js": { "memory": 128, "maxDuration": 60 } },
-  "rewrites": [ { "source": "/(.*)", "destination": "/api/index" } ],
-  "trailingSlash": false
+  "functions": {
+    "api/relay.js": {
+      "runtime": "edge",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/relay/:path*",
+      "destination": "/api/relay"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
 }
