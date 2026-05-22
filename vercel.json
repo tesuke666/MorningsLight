@@ -1,19 +1,8 @@
 {
-  "version": 2,
-  "functions": {
-    "api/relay.js": {
-      "runtime": "edge",
-      "maxDuration": 60
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/relay/:path*",
-      "destination": "/api/relay"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ]
+  "name": "dooroorooroo",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "here comes the sun",
+  "private": true,
+  "license": "MIT"
 }
